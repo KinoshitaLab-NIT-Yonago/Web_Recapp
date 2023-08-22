@@ -1,0 +1,57 @@
+/* styles.css */
+
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+}
+
+.outer-container {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.full-screen-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #273C75;
+    border-radius: 10px;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
+    color: #FFFFFF;
+    padding: 30px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-primary {
+    background-color: #2980B9;
+    border: none;
+}
+
+.btn-danger {
+    background-color: #E74C3C;
+    border: none;
+}
+
+select, input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
