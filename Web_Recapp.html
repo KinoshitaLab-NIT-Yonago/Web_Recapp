@@ -5,16 +5,19 @@
     <title>R5卒研用 録音アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet"> 
+    <link href="styles.css" rel="stylesheet">
 </head>
 <body>
     <div class="outer-container">
         <div class="full-screen-container">
             <h1 class="mb-3">R5卒研用 録音アプリ</h1>
             <div id="app">
-                <button class="btn btn-danger" type="button" v-if="status==='ready'" @click="startRecording">録音を開始する</button>
-                <button class="btn btn-primary" type="button" v-if="status==='recording'" @click="stopRecording">録音を停止する</button>
-                <p style="color: #CCCCCC;">ファイル名は下のプルダウンから選択するか、テキストボックスに入力した任意の名前に設定できます。</p>
+                <label for="machineState" style="color: #CCCCCC;">機械の状態:</label>
+                <select id="machineState" v-model="selectedMode">
+                    <option value="">機械の状態を選択</option>
+                    <option value="Idle">アイドル</option>
+                    <option value="Cutting">切削</option>
+                </select>
                 <div class="mt-3">
                     <label for="fileNameSelect" style="color: #CCCCCC;">ファイル名:</label>
                     <select id="fileNameSelect" v-model="selectedFileName">
@@ -40,6 +43,10 @@
                 <div v-if="downloadLink">
                     <a :href="downloadLink" :download="downloadFilename" @click="resetApp">ダウンロード</a>
                 </div>
+                <div class="mt-3">
+                    <button @click="startRecording" :disabled="status === 'recording'" class="btn btn-primary">録音開始</button>
+                    <button @click="stopRecording" :disabled="status !== 'recording'" class="btn btn-danger">録音停止</button>
+                </div>
             </div>
         </div>
     </div>
@@ -48,7 +55,7 @@
         new Vue({
             el: '#app',
             data: {
-                status: 'ready',
+                status: 'Idle',
                 recorder: null,
                 audioData: [],
                 predefinedFileNames: ['Lathe', 'Milling cutter', 'Air Compressor', 'Drill press', 'Grinder'],
@@ -59,7 +66,7 @@
                 recordTime: 10,
                 recordingTimer: 0,
                 progressBarWidth: '0%',
-                intervalTimer: null,
+                selectedMode: '',
             },
             methods: {
                 startRecording() {
@@ -83,14 +90,22 @@
                     }, interval);
                 },
                 stopRecording() {
-                    clearInterval(this.intervalTimer); // タイマーをクリア
+                    clearInterval(this.intervalTimer);
                     this.recorder.stop();
-                    this.status = 'ready';
+                    this.status = 'Idle';
                     this.recordingTimer = 0;
                     this.progressBarWidth = '0%';
+
+                    const mode = this.selectedMode === 'Idle' ? 'idle' : 'Cutting';
+                    const fileName = (this.selectedFileName !== '' ? this.selectedFileName : this.customFileName || Math.floor(Date.now() / 1000)) ;
+
+                    const audioBlob = new Blob(this.audioData, { type: 'audio/wav' });
+                    const url = URL.createObjectURL(audioBlob);
+                    this.downloadLink = url;
+                    this.downloadFilename = fileName + `_${mode}.wav`;
                 },
                 resetApp() {
-                    this.status = 'ready';
+                    this.status = 'Idle';
                     this.downloadLink = null;
                     this.downloadFilename = '';
                 },
@@ -102,11 +117,10 @@
                         this.audioData.push(e.data);
                     });
                     this.recorder.addEventListener('stop', () => {
-                        const audioBlob = new Blob(this.audioData, { type: 'audio/mp4' });
-                        const url = URL.createObjectURL(audioBlob);
+                        const mode = this.selectedMode === 'Idle' ? 'idle' : 'Cutting';
                         const fileName = this.selectedFileName !== '' ? this.selectedFileName : this.customFileName || Math.floor(Date.now() / 1000);
                         this.downloadLink = url;
-                        this.downloadFilename = fileName + '.mp4';
+                        this.downloadFilename = fileName + `_${mode}.wav`;
                     });
                 });
             },
