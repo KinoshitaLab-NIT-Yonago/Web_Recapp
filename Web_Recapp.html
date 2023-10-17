@@ -51,6 +51,7 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.x"></script>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script>
         new Vue({
             el: '#app',
@@ -74,55 +75,40 @@
                     this.audioData = [];
                     this.recordingTimer = 0;
                     this.progressBarWidth = '0%';
-                    this.recorder.start();
-                    const interval = 1000;
-                    const totalTicks = this.recordTime;
-                    let tick = 0;
 
-                    this.intervalTimer = setInterval(() => {
-                        tick++;
-                        this.recordingTimer = tick;
-                        this.progressBarWidth = ((tick / totalTicks) * 100) + '%';
+                    // Recorder.jsを使用して録音を開始
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                        this.recorder = new Recorder(new AudioContext().createMediaStreamSource(stream));
+                        this.recorder.record();
+                        this.intervalTimer = setInterval(() => {
+                            this.recordingTimer++;
+                            this.progressBarWidth = ((this.recordingTimer / this.recordTime) * 100) + '%';
 
-                        if (tick >= totalTicks) {
-                            this.stopRecording();
-                        }
-                    }, interval);
+                            if (this.recordingTimer >= this.recordTime) {
+                                this.stopRecording();
+                            }
+                        }, 1000);
+                    });
                 },
                 stopRecording() {
                     clearInterval(this.intervalTimer);
                     this.recorder.stop();
+
+                    // 音声データをWAVファイルに変換
+                    this.recorder.exportWAV((blob) => {
+                        this.downloadLink = URL.createObjectURL(blob);
+                        const mode = this.selectedMode === 'Idle' ? 'idle' : 'Cutting';
+                        const fileName = this.selectedFileName !== '' ? this.selectedFileName : this.customFileName || Math.floor(Date.now() / 1000);
+                        this.downloadFilename = fileName + `_${mode}.wav`;
+                    });
+
                     this.status = 'Idle';
-                    this.recordingTimer = 0;
-                    this.progressBarWidth = '0%';
-
-                    const mode = this.selectedMode === 'Idle' ? 'idle' : 'Cutting';
-                    const fileName = (this.selectedFileName !== '' ? this.selectedFileName : this.customFileName || Math.floor(Date.now() / 1000)) ;
-
-                    const audioBlob = new Blob(this.audioData, { type: 'audio/wav' });
-                    const url = URL.createObjectURL(audioBlob);
-                    this.downloadLink = url;
-                    this.downloadFilename = fileName + `_${mode}.wav`;
                 },
                 resetApp() {
                     this.status = 'Idle';
                     this.downloadLink = null;
                     this.downloadFilename = '';
                 },
-            },
-            mounted() {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-                    this.recorder = new MediaRecorder(stream);
-                    this.recorder.addEventListener('dataavailable', (e) => {
-                        this.audioData.push(e.data);
-                    });
-                    this.recorder.addEventListener('stop', () => {
-                        const mode = this.selectedMode === 'Idle' ? 'idle' : 'Cutting';
-                        const fileName = this.selectedFileName !== '' ? this.selectedFileName : this.customFileName || Math.floor(Date.now() / 1000);
-                        this.downloadLink = url;
-                        this.downloadFilename = fileName + `_${mode}.wav`;
-                    });
-                });
             },
         });
     </script>
